@@ -25,6 +25,12 @@ class Environment:
         self._moves: List = []
         self._last_state = board.piece_bb
 
+    def get_player(self):
+        """
+        Get the player of the environment.
+        """
+        return self.board.turn
+
     @property
     def action_space(self):
         """
@@ -40,7 +46,14 @@ class Environment:
             self._moves.append(move)
         return self._moves
 
-    def from_board(self, board: Board):
+    def is_terminal_state(self) -> bool:
+        """
+        Check if the game is in a terminal state.
+        """
+        return self.board.is_game_over()
+
+    @classmethod
+    def from_board(cls, board: Board):
         """
         currently just is another constructor basically.
         """

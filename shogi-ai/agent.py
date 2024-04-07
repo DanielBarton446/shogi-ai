@@ -12,8 +12,9 @@ class Agent:
     Agent should not be used for anything other than inheritance.
     """
 
-    def __init__(self, env: Environment, strategy=None):
+    def __init__(self, env: Environment, player: int, strategy=None):
         self._env = env
+        self.player = player
         self.strategy = strategy
 
     def select_action(self):
