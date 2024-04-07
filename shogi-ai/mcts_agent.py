@@ -103,7 +103,7 @@ class MctsAgent(Agent):
             move = self._select_random_move(board_copy)
             board_copy.push(move)
 
-        return _utility(board_copy)
+        return self._utility(board_copy)
 
     def _utility(self, board_copy: Board):
         if board_copy.is_checkmate():
