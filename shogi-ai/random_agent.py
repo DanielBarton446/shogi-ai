@@ -6,9 +6,11 @@ Random Agent:
 """
 
 import random
-from shogi.Move import Move
+
 from agent import Agent
 from environment import Environment
+from shogi import Board
+from shogi.Move import Move
 
 
 class RandomAgent(Agent):
@@ -30,10 +32,10 @@ class RandomAgent(Agent):
         strategy = "random"
         super().__init__(env, strategy)
 
-    def select_action(self, state) -> Move:
+    def select_action(self) -> Move:
         legal_moves = self._env.action_space
         return random.choice(legal_moves)
 
     @classmethod
-    def from_board(cls, board):
+    def from_board(cls, board: Board):
         return RandomAgent(Environment(board))

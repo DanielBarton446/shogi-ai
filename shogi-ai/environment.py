@@ -11,6 +11,8 @@ env = Environment(board)
 
 """
 
+from typing import List
+
 from shogi import Board
 
 
@@ -20,7 +22,7 @@ class Environment:
     """
     def __init__(self, board: Board):
         self.board = board
-        self._moves = []
+        self._moves: List = []
         self._last_state = board.piece_bb
 
     @property

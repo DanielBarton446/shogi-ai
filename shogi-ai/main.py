@@ -9,27 +9,28 @@ how viable monte carlo tree search would be for this game.
 """
 
 import shogi
-from shogi.Move import Move
+from environment import Environment
 from random_agent import RandomAgent
+from shogi import Board, Move
 
 
-def main():
+def main() -> None:
     """
     Main function for the example.
     """
-    board = shogi.Board()
+    board: Board = shogi.Board()
 
     agent1: RandomAgent = RandomAgent.from_board(board)
-    env = agent1.env
+    env: Environment = agent1.env
     agent2: RandomAgent = RandomAgent(env)
 
     while not board.is_game_over():
-        agent1_action: Move = agent1.select_action(board)
+        agent1_action: Move = agent1.select_action()
         board.push(agent1_action)
         if board.is_game_over():
             break
 
-        agent2_action: Move = agent2.select_action(board)
+        agent2_action: Move = agent2.select_action()
         board.push(agent2_action)
 
     print("Final State of board:")
