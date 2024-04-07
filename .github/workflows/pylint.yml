@@ -24,3 +24,6 @@ jobs:
       run: |
         pylint $(git ls-files '*.py')
         black $(git ls-files '*.py')
+    - name: Ensuring type hints exist with mypy
+      run: |
+        mypy shogi-ai --disable-error-code=import-untyped 
