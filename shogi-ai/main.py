@@ -29,6 +29,7 @@ def main() -> None:
 
     agent2: RandomAgent = RandomAgent(env, player=1)
 
+    agent1_action: Move = agent1.select_action()
     while not board.is_game_over():
         agent1_action: Move = agent1.select_action()
         board.push(agent1_action)
@@ -44,7 +45,11 @@ def main() -> None:
 
     print("Final State of board:")
     print(board)
+    print(f"Player {board.turn} Lost!")
     print(f"Number of moves {len(board.move_stack)}")
+    print(f"Simulated games: {agent1.games_simulated}")
+    print(f"Rollouts: {agent1.rollouts}")
+    print(f"Positions Checked: {agent1.positions_checked}")
     with open("game.txt", "w") as f:
         for move in board.move_stack:
             f.write(str(move) + "\n")
