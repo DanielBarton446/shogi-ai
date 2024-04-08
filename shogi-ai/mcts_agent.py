@@ -68,7 +68,7 @@ class MctsAgent(Agent):
         # Seed initial expansion
         self._expansion(self.env.board, self.tree)
 
-        while time_delta < self.time_limit and self.games_simulated < 1000:
+        while time_delta < self.time_limit or self.games_simulated < 1000:
             time_delta = time.time() - start_time
             node_to_simulate = self._selection()
             self._simulation(node_to_simulate)
