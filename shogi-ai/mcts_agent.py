@@ -68,7 +68,7 @@ class MctsAgent(Agent):
         # Seed initial expansion
         self._expansion(self.env.board, self.tree)
 
-        while time_delta < self.time_limit or self.games_simulated < 1000:
+        while time_delta < self.time_limit:
             time_delta = time.time() - start_time
             node_to_simulate = self._selection()
             self._simulation(node_to_simulate)
@@ -126,7 +126,7 @@ class MctsAgent(Agent):
         # we just play moves after we get to the current move position
         self.rollouts += 1
 
-        while not board_copy.is_game_over() and board_copy.move_number < 100:
+        while not board_copy.is_game_over():
             new_random_move = self._random_move(board_copy)
             board_copy.push(new_random_move)
 
