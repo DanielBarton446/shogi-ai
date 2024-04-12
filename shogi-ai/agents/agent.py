@@ -2,7 +2,7 @@
 Agent class is the base class for all agents.
 """
 
-from environment import Environment
+from env.environment import Environment
 from shogi import Board
 
 

@@ -9,13 +9,10 @@ how viable monte carlo tree search would be for this game.
 """
 
 import shogi
-import sys
-from environment import Environment
-from random_agent import RandomAgent
-from mcts_agent import MctsAgent
+from agents.mcts_agent import MctsAgent
+from agents.random_agent import RandomAgent
+from env.environment import Environment
 from shogi import Board, Move
-
-sys.stdout = open(sys.stdout.fileno(), mode="w", encoding="utf-8", buffering=1)
 
 
 def main() -> None:
@@ -29,7 +26,6 @@ def main() -> None:
 
     agent2: RandomAgent = RandomAgent(env, player=1)
 
-    agent1_action: Move = agent1.select_action()
     while not board.is_game_over():
         agent1_action: Move = agent1.select_action()
         board.push(agent1_action)
@@ -50,7 +46,7 @@ def main() -> None:
     print(f"Simulated games: {agent1.games_simulated}")
     print(f"Rollouts: {agent1.rollouts}")
     print(f"Positions Checked: {agent1.positions_checked}")
-    with open("game.txt", "w") as f:
+    with open("game.txt", "w", encoding="utf-8") as f:
         for move in board.move_stack:
             f.write(str(move) + "\n")
 

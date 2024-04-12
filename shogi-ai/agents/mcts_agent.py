@@ -1,23 +1,31 @@
+"""
 
-import time
-import random
+A monte-carlo tree search for playing shogi
+
+"""
+
 import math
+import random
+import time
+from typing import List, Optional
 
-from shogi import Board
-from shogi import Move
-from environment import Environment
-from agent import Agent
-from typing import Optional
+from agents.agent import Agent
+from env.environment import Environment
+from shogi import Board, Move
 
 
-class Node:
+class Node:  # pylint: disable=too-few-public-methods
+    """
+    Node class for moves in the MCTS tree.
+    """
+
     # we are at first going to have a max depth of recorded
     # nodes of 1. This might be a bad idea, but we will see
 
     def __init__(self, move: Optional[Move], parent=None):
         self.move = move
         self.parent = parent
-        self.children = []
+        self.children: List[Node] = []
         self.visits = 0
         self.value = 0
 
@@ -25,6 +33,9 @@ class Node:
             parent.children.append(self)
 
     def get_child_from_move(self, move: Move):
+        """
+        Fetch a child move if it exists for the given move.
+        """
         for child in self.children:
             if child.move == move:
                 return child
@@ -92,13 +103,18 @@ class MctsAgent(Agent):
             curr_node_visits = max(1, current_node.visits)
             tree_visits = max(1, self.tree.visits)
 
-            uct_ucb1 = current_node.value / curr_node_visits + self.exploration_coefficient * math.sqrt(
-                math.log(tree_visits) / curr_node_visits
+            uct_ucb1 = (
+                current_node.value / curr_node_visits
+                + self.exploration_coefficient
+                * math.sqrt(math.log(tree_visits) / curr_node_visits)
             )
             if uct_ucb1 > max_uct_ucb1:
                 max_uct_ucb1 = uct_ucb1
                 node_to_rollout = current_node
             queue.extend(current_node.children)
+
+        if node_to_rollout is None:
+            raise ValueError("No node to rollout")
 
         return node_to_rollout
 
@@ -136,8 +152,7 @@ class MctsAgent(Agent):
         if board_copy.is_checkmate():
             if board_copy.turn != self.player:
                 return 1
-            else:
-                return -1
+            return -1
         return 0
 
     def _backpropagation(self, leaf_node: Node, value: int):
@@ -150,7 +165,7 @@ class MctsAgent(Agent):
 
     def _random_move(self, board: Board) -> Move:
         self.positions_checked += 1
-        moves = [move for move in board.pseudo_legal_moves]
+        moves = list(board.pseudo_legal_moves)
         move = None
         while True:
             move = random.choice(moves)
@@ -161,7 +176,7 @@ class MctsAgent(Agent):
 
     def _expansion(self, board: Board, parent_node: Node) -> None:
         move = self._random_move(board)
-        node = Node(move=move, parent=parent_node)
+        Node(move=move, parent=parent_node)
 
     @classmethod
     def from_board(cls, board: Board):

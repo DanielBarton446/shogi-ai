@@ -7,11 +7,10 @@ Random Agent:
 
 import random
 
-from agent import Agent
-from environment import Environment
+from agents.agent import Agent
+from env.environment import Environment
 from shogi import Board
 from shogi.Move import Move
-from typing import Optional
 
 
 class RandomAgent(Agent):
@@ -33,7 +32,7 @@ class RandomAgent(Agent):
         strategy = "random"
         super().__init__(env=env, player=player, strategy=strategy)
 
-    def select_action(self, board: Optional[Board] = None) -> Move:
+    def select_action(self) -> Move:
         if self.player != self.env.board.turn:
             raise ValueError("Not the player's turn")
         legal_moves = self._env.action_space
