@@ -27,7 +27,7 @@ def main() -> None:
     agent2: RandomAgent = RandomAgent(env, player=1)
 
     while not board.is_game_over():
-        agent1_action: Move = agent1.select_action()
+        agent1_action: Move = agent1.select_action(board)
         board.push(agent1_action)
         print(f"Agent 1 move: {agent1_action}")
         print(f"Games simulated: {agent1.games_simulated}")

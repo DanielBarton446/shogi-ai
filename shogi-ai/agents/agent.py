@@ -2,6 +2,8 @@
 Agent class is the base class for all agents.
 """
 
+from typing import Optional
+
 from env.environment import Environment
 from shogi import Board
 
@@ -17,9 +19,11 @@ class Agent:
         self.player = player
         self.strategy = strategy
 
-    def select_action(self):
+    def select_action(self, board: Optional[Board] = None):
         """
         Select an action based on the state of the environment.
+        Optionally provide a board to select an action from and update
+        the environment accordingly.
 
         NotImplementedError: This method must be implemented by the subclass
         """

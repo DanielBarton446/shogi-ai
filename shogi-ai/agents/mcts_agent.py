@@ -12,6 +12,10 @@ from typing import List, Optional
 from agents.agent import Agent
 from env.environment import Environment
 from shogi import Board, Move
+from util.common import get_logger
+
+logger = get_logger(__name__)
+logger.setLevel("DEBUG")
 
 
 class Node:  # pylint: disable=too-few-public-methods
@@ -28,6 +32,8 @@ class Node:  # pylint: disable=too-few-public-methods
         self.children: List[Node] = []
         self.visits = 0
         self.value = 0
+        self.ucb1 = float("inf")
+        self.expanded = False
 
         if parent:
             parent.children.append(self)
@@ -40,6 +46,27 @@ class Node:  # pylint: disable=too-few-public-methods
             if child.move == move:
                 return child
         return None
+
+    def all_subchild_nodes(self) -> List["Node"]:
+        """
+        returns a list of all subchild nodes. EXCLUDING the root.
+        """
+        bfs_queue = [self]
+        nodes = []
+        while bfs_queue:
+            current_node = bfs_queue.pop()
+            nodes.append(current_node)
+            bfs_queue.extend(current_node.children)
+        nodes.remove(self)  # remove the root node
+
+        return nodes
+
+
+    def __repr__(self):
+        msg = f"Node from -- Move: {self.move} - Visits: {self.visits}\n"
+        for child in self.children:
+            msg += f"{[str(child.move) for child in self.children]}\n"
+        return msg
 
 
 class MctsAgent(Agent):
@@ -67,7 +94,9 @@ class MctsAgent(Agent):
         self.exploration_coefficient = 1.41
         super().__init__(env=env, player=player, strategy=strategy)
 
-    def select_action(self):
+    def select_action(self, board: Optional[Board] = None) -> Move:
+        self._env.board = board or self._env.board
+
         if self.player != self.env.board.turn:
             raise ValueError("Not the MCTS_AGENT's turn")
 
@@ -84,34 +113,39 @@ class MctsAgent(Agent):
             node_to_simulate = self._selection()
             self._simulation(node_to_simulate)
             self.games_simulated += 1
+            logger.debug(f"{[child.visits for child in self.tree.children]}")
 
         # select the immediate child (depth 1) with the most visits
         # as we revisit the most promising nodes
         best_node = max(self.tree.children, key=lambda n: n.visits)
 
+        logger.info(f"Games simulated: {self.games_simulated}")
+        logger.info(f"Selected move: {best_node.move}")
         return best_node.move
 
     def _selection(self) -> Node:
-        queue = []
-        queue.extend(self.tree.children)
+        selection_queue: List[Node] = self.tree.all_subchild_nodes()
+
         max_uct_ucb1 = float("-inf")
         node_to_rollout = None
 
-        while queue:
-            current_node: Node = queue.pop(0)
+        while selection_queue:
+            current_node: Node = selection_queue.pop()
 
-            curr_node_visits = max(1, current_node.visits)
+            if current_node.visits == 0:
+                return current_node
             tree_visits = max(1, self.tree.visits)
 
             uct_ucb1 = (
-                current_node.value / curr_node_visits
+                current_node.value / current_node.visits
                 + self.exploration_coefficient
-                * math.sqrt(math.log(tree_visits) / curr_node_visits)
+                * math.sqrt(math.log(tree_visits) / current_node.visits)
             )
+            current_node.ucb1 = uct_ucb1
             if uct_ucb1 > max_uct_ucb1:
                 max_uct_ucb1 = uct_ucb1
                 node_to_rollout = current_node
-            queue.extend(current_node.children)
+            selection_queue.extend(current_node.children)
 
         if node_to_rollout is None:
             raise ValueError("No node to rollout")
@@ -133,7 +167,7 @@ class MctsAgent(Agent):
         if node_to_rollout.visits == 0:
             value = self._rollout(board_copy=board_copy)
         else:
-            self._expansion(board_copy, node_to_rollout)
+            self._expansion(board_copy, node_to_rollout.parent)
             value = self._rollout(board_copy=board_copy)
 
         self._backpropagation(node_to_rollout, value)
@@ -157,6 +191,7 @@ class MctsAgent(Agent):
 
     def _backpropagation(self, leaf_node: Node, value: int):
         leaf_node.value += value
+        leaf_node.visits += 1  # turn out its important to say we visited this node
         p = leaf_node.parent
         while p:
             p.visits += 1
@@ -175,8 +210,21 @@ class MctsAgent(Agent):
         return move
 
     def _expansion(self, board: Board, parent_node: Node) -> None:
-        move = self._random_move(board)
-        Node(move=move, parent=parent_node)
+        # Seems really gross that we have to check if this layer
+        # of the tree has already been expanded. We might
+        # be able to just check if the move is fetchable already in 
+        # the tree and by that assertion we can know that we dont 
+        # need to create new nodes.
+        if parent_node.expanded:
+            return
+
+        for legal_move in board.legal_moves:
+            if self.tree.get_child_from_move(legal_move) is not None:
+                logger.warning(f"Already expanded this legal move somehow: {legal_move}")
+                continue
+            else:
+                Node(move=legal_move, parent=parent_node)
+        parent_node.expanded = True
 
     @classmethod
     def from_board(cls, board: Board):
