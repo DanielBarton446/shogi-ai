@@ -6,6 +6,7 @@ Random Agent:
 """
 
 import random
+from typing import Optional
 
 from agents.agent import Agent
 from env.environment import Environment
@@ -32,7 +33,7 @@ class RandomAgent(Agent):
         strategy = "random"
         super().__init__(env=env, player=player, strategy=strategy)
 
-    def select_action(self) -> Move:
+    def select_action(self, board: Optional[Board] = None) -> Move:
         if self.player != self.env.board.turn:
             raise ValueError("Not the player's turn")
         legal_moves = self._env.action_space

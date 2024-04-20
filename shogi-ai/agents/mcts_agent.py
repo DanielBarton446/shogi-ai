@@ -61,7 +61,6 @@ class Node:  # pylint: disable=too-few-public-methods
 
         return nodes
 
-
     def __repr__(self):
         msg = f"Node from -- Move: {self.move} - Visits: {self.visits}\n"
         for child in self.children:
@@ -86,7 +85,7 @@ class MctsAgent(Agent):
 
     def __init__(self, env: Environment, player: int, strategy=None):
         strategy = "mcts"
-        self.time_limit = 5
+        self.time_limit = 10
         self.tree = Node(move=None, parent=None)
         self.games_simulated = 0
         self.positions_checked = 0
@@ -103,7 +102,7 @@ class MctsAgent(Agent):
         self.tree = Node(move=None, parent=None)
         self.games_simulated = 0
         start_time = time.time()
-        time_delta = 0
+        time_delta = 0.0
 
         # Seed initial expansion
         self._expansion(self.env.board, self.tree)
@@ -113,14 +112,14 @@ class MctsAgent(Agent):
             node_to_simulate = self._selection()
             self._simulation(node_to_simulate)
             self.games_simulated += 1
-            logger.debug(f"{[child.visits for child in self.tree.children]}")
+            logger.debug("%s", [child.visits for child in self.tree.children])
 
         # select the immediate child (depth 1) with the most visits
         # as we revisit the most promising nodes
         best_node = max(self.tree.children, key=lambda n: n.visits)
 
-        logger.info(f"Games simulated: {self.games_simulated}")
-        logger.info(f"Selected move: {best_node.move}")
+        logger.info("Games simulated: %i", self.games_simulated)
+        logger.info("Selected move: %s", best_node.move)
         return best_node.move
 
     def _selection(self) -> Node:
@@ -212,18 +211,19 @@ class MctsAgent(Agent):
     def _expansion(self, board: Board, parent_node: Node) -> None:
         # Seems really gross that we have to check if this layer
         # of the tree has already been expanded. We might
-        # be able to just check if the move is fetchable already in 
-        # the tree and by that assertion we can know that we dont 
+        # be able to just check if the move is fetchable already in
+        # the tree and by that assertion we can know that we dont
         # need to create new nodes.
         if parent_node.expanded:
             return
 
         for legal_move in board.legal_moves:
             if self.tree.get_child_from_move(legal_move) is not None:
-                logger.warning(f"Already expanded this legal move somehow: {legal_move}")
+                logger.warning(
+                    "Already expanded this legal move somehow: %s", legal_move
+                )
                 continue
-            else:
-                Node(move=legal_move, parent=parent_node)
+            Node(move=legal_move, parent=parent_node)
         parent_node.expanded = True
 
     @classmethod
