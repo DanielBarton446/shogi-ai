@@ -124,6 +124,7 @@ class MctsAgent(Agent):
 
     def _selection(self) -> Node:
         selection_queue: List[Node] = self.tree.all_subchild_nodes()
+        random.shuffle(selection_queue)
 
         max_uct_ucb1 = float("-inf")
         node_to_rollout = None
@@ -131,14 +132,15 @@ class MctsAgent(Agent):
         while selection_queue:
             current_node: Node = selection_queue.pop()
 
-            if current_node.visits == 0:
-                return current_node
+            # if current_node.visits == 0:
+            #     return current_node
+            visits = max(1, current_node.visits)
             tree_visits = max(1, self.tree.visits)
 
             uct_ucb1 = (
-                current_node.value / current_node.visits
+                current_node.value / visits
                 + self.exploration_coefficient
-                * math.sqrt(math.log(tree_visits) / current_node.visits)
+                * math.sqrt(math.log(tree_visits) / visits)
             )
             current_node.ucb1 = uct_ucb1
             if uct_ucb1 > max_uct_ucb1:
