@@ -4,10 +4,12 @@ A monte-carlo tree search for playing shogi
 
 """
 
+import concurrent.futures
 import math
+import os
 import random
 import time
-from typing import List, Optional
+from typing import List, Optional, Tuple
 
 from agents.agent import Agent
 from env.environment import Environment
@@ -42,9 +44,11 @@ class Node:  # pylint: disable=too-few-public-methods
         """
         Fetch a child move if it exists for the given move.
         """
-        for child in self.children:
+        all_children = self.all_subchild_nodes()
+        for child in all_children:
             if child.move == move:
                 return child
+        # logger.warning(f"Couldn't find {move} in current tree:\n {[node.move for node in self.all_subchild_nodes()]}")
         return None
 
     def all_subchild_nodes(self) -> List["Node"]:
@@ -87,11 +91,14 @@ class MctsAgent(Agent):
         strategy = "mcts"
         self.time_limit = 10
         self.tree = Node(move=None, parent=None)
-        self.games_simulated = 0
+        self.total_games_simulated = 0
         self.positions_checked = 0
         self.rollouts = 0
         self.exploration_coefficient = 1.41
         super().__init__(env=env, player=player, strategy=strategy)
+
+    def current_board_sims(self) -> int:
+        return self.tree.visits
 
     def select_action(self, board: Optional[Board] = None) -> Move:
         self._env.board = board or self._env.board
@@ -100,30 +107,44 @@ class MctsAgent(Agent):
             raise ValueError("Not the MCTS_AGENT's turn")
 
         self.tree = Node(move=None, parent=None)
-        self.games_simulated = 0
         start_time = time.time()
         time_delta = 0.0
 
         # Seed initial expansion
         self._expansion(self.env.board, self.tree)
 
+        # this really shouldn't be done here, and should be a config
+        num_workers = 1
+        number_of_cores = os.cpu_count()
+        if number_of_cores:
+            num_workers = number_of_cores - 2
+
         while time_delta < self.time_limit:
             time_delta = time.time() - start_time
-            node_to_simulate = self._selection()
-            self._simulation(node_to_simulate)
-            self.games_simulated += 1
+            with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
+                futures = []
+                for proc in range(num_workers):
+                    futures.append(executor.submit(self._simulation, self._selection([self.tree])))
+                results = [future.result() for future in concurrent.futures.as_completed(futures, self.time_limit)]
+            for res in results:
+                self._backpropagation(self.tree.get_child_from_move(res[0]), res[1])
+
             logger.debug("%s", [child.visits for child in self.tree.children])
+
+        self.total_games_simulated += self.current_board_sims()
+        logger.info("Games simulated: %i", self.tree.visits)
 
         # select the immediate child (depth 1) with the most visits
         # as we revisit the most promising nodes
         best_node = max(self.tree.children, key=lambda n: n.visits)
-
-        logger.info("Games simulated: %i", self.games_simulated)
         logger.info("Selected move: %s", best_node.move)
+
         return best_node.move
 
-    def _selection(self) -> Node:
-        selection_queue: List[Node] = self.tree.all_subchild_nodes()
+    def _selection(self, nodes: List[Node]) -> Node:
+        selection_queue: List[Node] = []
+        for node in nodes:
+            selection_queue.extend(node.all_subchild_nodes())
         random.shuffle(selection_queue)
 
         max_uct_ucb1 = float("-inf")
@@ -153,7 +174,24 @@ class MctsAgent(Agent):
 
         return node_to_rollout
 
-    def _simulation(self, node_to_rollout: Node):
+    def _utility(self, board_copy: Board):
+        if board_copy.is_checkmate():
+            if board_copy.turn != self.player:
+                return 1
+            return -1
+        return 0
+
+    def _rollout(self, board_copy: Board) -> int:
+        # we just play moves after we get to the current move position
+        self.rollouts += 1
+
+        while not board_copy.is_game_over():
+            new_random_move = self._random_move(board_copy)
+            board_copy.push(new_random_move)
+
+        return self._utility(board_copy)
+
+    def _simulation(self, node_to_rollout: Node) -> Tuple[Move, int]:
         board_copy = Board(self._env.board.sfen())
 
         # make all the moves to the board that got us to this node.
@@ -171,24 +209,7 @@ class MctsAgent(Agent):
             self._expansion(board_copy, node_to_rollout.parent)
             value = self._rollout(board_copy=board_copy)
 
-        self._backpropagation(node_to_rollout, value)
-
-    def _rollout(self, board_copy: Board) -> int:
-        # we just play moves after we get to the current move position
-        self.rollouts += 1
-
-        while not board_copy.is_game_over():
-            new_random_move = self._random_move(board_copy)
-            board_copy.push(new_random_move)
-
-        return self._utility(board_copy)
-
-    def _utility(self, board_copy: Board):
-        if board_copy.is_checkmate():
-            if board_copy.turn != self.player:
-                return 1
-            return -1
-        return 0
+        return (node_to_rollout.move, value)
 
     def _backpropagation(self, leaf_node: Node, value: int):
         leaf_node.value += value

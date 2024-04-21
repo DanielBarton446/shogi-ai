@@ -30,7 +30,7 @@ def main() -> None:
         agent1_action: Move = agent1.select_action(board)
         board.push(agent1_action)
         print(f"Agent 1 move: {agent1_action}")
-        print(f"Games simulated: {agent1.games_simulated}")
+        print(f"Games simulated: {agent1.current_board_sims()}")
         print(board)
         print(f"Move: {len(board.move_stack)}")
         if board.is_game_over():
@@ -43,7 +43,7 @@ def main() -> None:
     print(board)
     print(f"Player {board.turn} Lost!")
     print(f"Number of moves {len(board.move_stack)}")
-    print(f"Simulated games: {agent1.games_simulated}")
+    print(f"Simulated games: {agent1.total_games_simulated}")
     print(f"Rollouts: {agent1.rollouts}")
     print(f"Positions Checked: {agent1.positions_checked}")
     with open("game.txt", "w", encoding="utf-8") as f:
