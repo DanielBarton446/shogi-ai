@@ -24,7 +24,7 @@ def get_logger(name: str) -> logging.Logger:
         logdir.mkdir()
 
     form = "%(asctime)s.%(msecs)03d - %(name)s - %(levelname)s - %(message)s"
-    time = datetime.now().strftime("%Y%m%d.%H%M%S.%f")
+    time = datetime.now().strftime("%Y%m%d.%H%M%S")
     logging.basicConfig(
         filename=f"{logdir}/{name}.{time}.log",
         level=logging.INFO,

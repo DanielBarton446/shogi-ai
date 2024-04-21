@@ -15,14 +15,13 @@ print(results)
 """
 
 import concurrent.futures
+import multiprocessing
 import os
 from concurrent.futures import Future, ProcessPoolExecutor
 from functools import partial
 from typing import Any, Callable, List
 
-from util.common import get_logger
-
-logger = get_logger(__name__)
+logger = multiprocessing.get_logger()
 
 
 class MultiProcManager:
