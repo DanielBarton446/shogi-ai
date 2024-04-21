@@ -11,7 +11,7 @@ how viable monte carlo tree search would be for this game.
 import shogi
 from agents.mcts_agent import MctsAgent
 from agents.random_agent import RandomAgent
-from env.environment import Environment
+from environments.environment import Environment
 from shogi import Board, Move
 
 

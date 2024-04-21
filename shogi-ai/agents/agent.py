@@ -4,7 +4,7 @@ Agent class is the base class for all agents.
 
 from typing import Optional
 
-from env.environment import Environment
+from environments.environment import Environment
 from shogi import Board
 
 

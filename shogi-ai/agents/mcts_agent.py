@@ -12,7 +12,7 @@ import time
 from typing import List, Optional, Tuple
 
 from agents.agent import Agent
-from env.environment import Environment
+from environments.environment import Environment
 from shogi import Board, Move
 from util.common import get_logger
 

@@ -9,7 +9,7 @@ import random
 from typing import Optional
 
 from agents.agent import Agent
-from env.environment import Environment
+from environments.environment import Environment
 from shogi import Board
 from shogi.Move import Move
 
