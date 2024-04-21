@@ -20,6 +20,7 @@ class Environment:
     """
     Environment class for a shogi board.
     """
+
     def __init__(self, board: Board):
         self.board = board
         self._moves: List = []

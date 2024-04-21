@@ -5,8 +5,21 @@ the Grimbergen evaluation of pieces.
 
 """
 
-from shogi import (BISHOP, GOLD, KNIGHT, LANCE, PAWN, PROM_BISHOP, PROM_KNIGHT,
-                   PROM_LANCE, PROM_PAWN, PROM_ROOK, PROM_SILVER, ROOK, SILVER)
+from shogi import (
+    BISHOP,
+    GOLD,
+    KNIGHT,
+    LANCE,
+    PAWN,
+    PROM_BISHOP,
+    PROM_KNIGHT,
+    PROM_LANCE,
+    PROM_PAWN,
+    PROM_ROOK,
+    PROM_SILVER,
+    ROOK,
+    SILVER,
+)
 
 GRIMBERGEN = {
     PAWN: 1,

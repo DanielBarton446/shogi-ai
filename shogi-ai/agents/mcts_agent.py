@@ -5,11 +5,10 @@ A monte-carlo tree search for playing shogi
 """
 
 import math
-import os
 import random
 import time
 from functools import partial
-from typing import List, Optional, Tuple, Callable
+from typing import Callable, List, Optional, Tuple
 
 from agents.agent import Agent
 from environments.environment import Environment
@@ -49,7 +48,9 @@ class Node:  # pylint: disable=too-few-public-methods
         for child in all_children:
             if child.move == move:
                 return child
-        # logger.warning(f"Couldn't find {move} in current tree:\n {[node.move for node in self.all_subchild_nodes()]}")
+        logger.warning(
+            "{move} not in tree:\n %s", {[str(child.move) for child in all_children]}
+        )
         return None
 
     def all_subchild_nodes(self) -> List["Node"]:
@@ -100,6 +101,10 @@ class MctsAgent(Agent):
         super().__init__(env=env, player=player, strategy=strategy)
 
     def current_board_sims(self) -> int:
+        """
+        returns the number of simulations that have been run for this current
+        tree.
+        """
         return self.tree.visits
 
     def select_action(self, board: Optional[Board] = None) -> Move:
@@ -118,10 +123,12 @@ class MctsAgent(Agent):
         while time_delta < self.time_limit:
             time_delta = time.time() - start_time
             task_futures = self.multiproc_manager.spawn_tasks(
-                            task_lambda=self._simulation,
-                            selector=partial(self._selection, [self.tree]))
-            results = self.multiproc_manager.futures_results(task_futures,
-                                                             self.time_limit)
+                task_lambda=self._simulation,
+                selector=partial(self._selection, [self.tree]),
+            )
+            results = self.multiproc_manager.futures_results(
+                task_futures, self.time_limit
+            )
             for res in results:
                 self._backpropagation(self.tree.get_child_from_move(res[0]), res[1])
 
