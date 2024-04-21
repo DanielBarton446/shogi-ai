@@ -4,17 +4,18 @@ A monte-carlo tree search for playing shogi
 
 """
 
-import concurrent.futures
 import math
 import os
 import random
 import time
-from typing import List, Optional, Tuple
+from functools import partial
+from typing import List, Optional, Tuple, Callable
 
 from agents.agent import Agent
 from environments.environment import Environment
 from shogi import Board, Move
 from util.common import get_logger
+from util.multiproc import MultiProcManager
 
 logger = get_logger(__name__)
 logger.setLevel("DEBUG")
@@ -95,6 +96,7 @@ class MctsAgent(Agent):
         self.positions_checked = 0
         self.rollouts = 0
         self.exploration_coefficient = 1.41
+        self.multiproc_manager = MultiProcManager()
         super().__init__(env=env, player=player, strategy=strategy)
 
     def current_board_sims(self) -> int:
@@ -113,19 +115,13 @@ class MctsAgent(Agent):
         # Seed initial expansion
         self._expansion(self.env.board, self.tree)
 
-        # this really shouldn't be done here, and should be a config
-        num_workers = 1
-        number_of_cores = os.cpu_count()
-        if number_of_cores:
-            num_workers = number_of_cores - 2
-
         while time_delta < self.time_limit:
             time_delta = time.time() - start_time
-            with concurrent.futures.ProcessPoolExecutor(max_workers=num_workers) as executor:
-                futures = []
-                for proc in range(num_workers):
-                    futures.append(executor.submit(self._simulation, self._selection([self.tree])))
-                results = [future.result() for future in concurrent.futures.as_completed(futures, self.time_limit)]
+            task_futures = self.multiproc_manager.spawn_tasks(
+                            task_lambda=self._simulation,
+                            selector=partial(self._selection, [self.tree]))
+            results = self.multiproc_manager.futures_results(task_futures,
+                                                             self.time_limit)
             for res in results:
                 self._backpropagation(self.tree.get_child_from_move(res[0]), res[1])
 
@@ -191,7 +187,8 @@ class MctsAgent(Agent):
 
         return self._utility(board_copy)
 
-    def _simulation(self, node_to_rollout: Node) -> Tuple[Move, int]:
+    def _simulation(self, selector: Callable) -> Tuple[Move, int]:
+        node_to_rollout = selector()
         board_copy = Board(self._env.board.sfen())
 
         # make all the moves to the board that got us to this node.
