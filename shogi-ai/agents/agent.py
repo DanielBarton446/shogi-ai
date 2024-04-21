@@ -2,7 +2,9 @@
 Agent class is the base class for all agents.
 """
 
-from environment import Environment
+from typing import Optional
+
+from environments.environment import Environment
 from shogi import Board
 
 
@@ -12,13 +14,16 @@ class Agent:
     Agent should not be used for anything other than inheritance.
     """
 
-    def __init__(self, env: Environment, strategy=None):
+    def __init__(self, env: Environment, player: int, strategy=None):
         self._env = env
+        self.player = player
         self.strategy = strategy
 
-    def select_action(self):
+    def select_action(self, board: Optional[Board] = None):
         """
         Select an action based on the state of the environment.
+        Optionally provide a board to select an action from and update
+        the environment accordingly.
 
         NotImplementedError: This method must be implemented by the subclass
         """
