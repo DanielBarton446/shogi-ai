@@ -49,7 +49,9 @@ class Node:  # pylint: disable=too-few-public-methods
             if child.move == move:
                 return child
         logger.warning(
-            "{move} not in tree:\n %s", {[str(child.move) for child in all_children]}
+            "%s not in tree:\n %s",
+            str(move),
+            str([str(child.move) for child in all_children]),
         )
         return None
 
